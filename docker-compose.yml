@@ -1,0 +1,45 @@
+version: "2"
+
+services:
+  minas-tirith-db:
+    image: postgres:11
+    container_name: "minas-tirith-db"
+    volumes:
+      - "minas-tirith_db:/var/lib/postgresql/data"
+    environment:
+      - POSTGRES_USER=minas-tirith
+      - POSTGRES_PASSWORD=minas-tirith
+      - POSTGRES_DB=minas-tirith
+    ports:
+      - "5432:5432"
+    network_mode: bridge
+
+  minas-tirith-server:
+    image: quay.io/setuinfra/minas-tirith:<tag>
+    environment:
+      # Switch server credentials
+      - HTTP_PROXY=http://<user>:<password>@<switch-server>.setu.co:<port>
+      - ALL_PROXY=http://<user>:<password>@<switch-server>.setu.co:<port>
+      # Application config
+      - APPLICATION_HOST=0.0.0.0
+      - APPLICATION_PORT=3000
+      - APPLICATION_DB_CONTAINER=minas-tirith-db
+      - LOG_IN_FILE=nope
+      # Database config
+      - PGHOST=minas-tirith-db
+      - PGPORT=5432
+      - PGUSER=minas-tirith
+      - PGPASSWORD=minas-tirith
+      - PGDATABASE=minas-tirith
+    command: /app/server
+    ports:
+      - 3000:3000
+    network_mode: bridge
+    depends_on:
+      - minas-tirith-db
+    links:
+      - minas-tirith-db
+
+volumes:
+  minas-tirith_db:
+    external: true
